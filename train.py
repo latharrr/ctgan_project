@@ -7,14 +7,13 @@ Implements:
   - WGAN-GP (Wasserstein GAN with Gradient Penalty, λ=10)
   - PacGAN packing (pac_size=10)
   - Generator cross-entropy penalty on the conditioned discrete column
-  - 1 Critic step per Generator step (as per paper)
+  - 5 Critic steps per Generator step (WGAN-GP standard)
 """
 
 from __future__ import annotations
 
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import Adam
 from typing import List, Tuple, Optional
@@ -137,15 +136,16 @@ def generator_cond_loss(
         offset = disc_offsets[ci]
         n_cat  = disc_cols[ci].n_categories
 
-        # Logits from the generated discrete output
-        # (these are already Gumbel-softmax probabilities, but we treat as logits)
+        # Generator outputs Gumbel-softmax probabilities (not raw logits),
+        # so use NLL loss with log-probabilities instead of cross_entropy
+        # (cross_entropy internally applies softmax, which would double-softmax).
         gen_probs = fake_rows[mask, offset : offset + n_cat]   # (K, n_cat)
+        gen_probs = torch.clamp(gen_probs, min=1e-8)           # numerical safety
 
         # Target: the sampled category index
         target = torch.tensor(cat_idx[mask], dtype=torch.long, device=device)  # (K,)
 
-        # Log-softmax cross-entropy
-        loss_i = F.cross_entropy(gen_probs, target)
+        loss_i = F.nll_loss(torch.log(gen_probs), target)
         total_loss = total_loss + loss_i
 
     return total_loss / n_disc
@@ -224,7 +224,8 @@ def train_ctgan(
             real_pack = pack_batch(real_rows, cond_t, pac_size)  # (M, pac_in)
             fake_pack = pack_batch(fake_rows, cond_t, pac_size)
 
-            # ── 5. Update Critic ──────────────────────────────
+            # ── 5. Update Critic (n_critic steps) ────────────
+            d_step_loss = 0.0
             for _ in range(n_critic):
                 opt_d.zero_grad()
 
@@ -235,8 +236,9 @@ def train_ctgan(
                 loss_d = d_fake - d_real + gp
                 loss_d.backward()
                 opt_d.step()
+                d_step_loss += loss_d.item()
 
-            epoch_d += loss_d.item()
+            epoch_d += d_step_loss / n_critic   # average across critic steps
 
             # ── 6. Update Generator ───────────────────────────
             opt_g.zero_grad()
