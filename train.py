@@ -170,7 +170,7 @@ def train_ctgan(
     lr_d:        float = 2e-4,
     pac_size:    int   = 10,
     lambda_gp:   float = 10.0,
-    n_critic:    int   = 1,
+    n_critic:    int   = 5,
     device:      Optional[torch.device] = None,
     verbose:     bool  = True,
 ) -> Tuple[List[float], List[float]]:

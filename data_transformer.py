@@ -23,8 +23,8 @@ import numpy as np
 import pandas as pd
 from sklearn.mixture import BayesianGaussianMixture
 from sklearn.preprocessing import LabelEncoder
-from dataclasses import dataclass, field
-from typing import List, Tuple, Optional
+from dataclasses import dataclass
+from typing import List, Tuple
 
 
 # ─────────────────────────────────────────────────────────────
