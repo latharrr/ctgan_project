@@ -289,6 +289,25 @@ def main():
         target        = TARGET_COL,
     )
 
+    # ── Training loss plot ────────────────────────────────────
+    import matplotlib
+    matplotlib.use('Agg')          # headless — no display required
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.plot(ctgan.g_losses, label='Generator',   color='#4C72B0', linewidth=1.5)
+    ax.plot(ctgan.d_losses, label='Critic (D)',  color='#DD8452', linewidth=1.5)
+    ax.set_xlabel('Epoch')
+    ax.set_ylabel('Loss')
+    ax.set_title('CTGAN Training Losses (WGAN-GP) — UCI Adult Dataset')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    plot_path = os.path.join(os.path.dirname(__file__), 'training_losses.png')
+    fig.savefig(plot_path, dpi=150)
+    plt.close(fig)
+    print(f'[Demo] Loss plot saved to: {plot_path}')
+
     # ── Save synthetic data to CSV ────────────────────────────
     out_path = os.path.join(os.path.dirname(__file__), 'synthetic_adult.csv')
     syn_df.to_csv(out_path, index=False)

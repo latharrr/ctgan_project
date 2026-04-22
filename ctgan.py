@@ -169,7 +169,7 @@ class CTGAN:
             lr_d         = self.lr_d,
             pac_size     = self.pac_size,
             lambda_gp    = self.lambda_gp,
-            n_critic     = 1,
+            n_critic     = 5,
             device       = self._device,
             verbose      = self.verbose,
         )

@@ -109,6 +109,7 @@ class DataTransformer:
 
         vgm = BayesianGaussianMixture(
             n_components=self.VGM_MAX_COMPONENTS,
+            covariance_type='full',
             weight_concentration_prior_type='dirichlet_process',
             weight_concentration_prior=0.001,
             max_iter=100,
@@ -124,7 +125,7 @@ class DataTransformer:
             active = np.array([np.argmax(vgm.weights_)])
 
         means   = vgm.means_[active].flatten()
-        stds    = np.sqrt(vgm.covariances_[active]).flatten()
+        stds    = np.sqrt(vgm.covariances_[active, 0, 0])   # shape (n_active,) — full cov, 1-D col
         weights = vgm.weights_[active]
         weights = weights / weights.sum()   # re-normalise
 
